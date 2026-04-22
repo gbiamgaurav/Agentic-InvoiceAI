@@ -31,6 +31,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip,
   CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend,
 } from 'recharts'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 
 import { AGENT_DEFINITIONS, INITIAL_RULES, SAMPLE_INVOICES } from '@/lib/mockData'
 
@@ -116,6 +117,7 @@ function Topbar({ view, onUpload }) {
         <Button onClick={onUpload} size="sm" className="gap-1.5">
           <Upload className="h-4 w-4" /> Upload Invoice
         </Button>
+        <ThemeSwitcher />
         <Avatar className="h-8 w-8"><AvatarFallback className="bg-indigo-100 text-indigo-700 text-xs">PR</AvatarFallback></Avatar>
       </div>
     </header>
