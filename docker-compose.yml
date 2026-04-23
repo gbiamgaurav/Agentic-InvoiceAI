@@ -1,5 +1,6 @@
 services:
-  # MongoDB Service
+
+  # ── Database ─────────────────────────────────────────────────────────────────
   mongodb:
     image: mongo:7.0
     container_name: invoice-ai-mongodb
@@ -20,42 +21,80 @@ services:
       timeout: 5s
       retries: 5
 
-  # Next.js Application
-  app:
+  # ── FastAPI Backend ───────────────────────────────────────────────────────────
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: invoice-ai-app
+    container_name: invoice-ai-backend
     ports:
-      - "3000:3000"
+      - "8000:8000"
     environment:
-      # MongoDB connection string
+      # Database
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/invoiceai?authSource=admin
-      
-      # CORS configuration (allow all origins for development)
-      CORS_ORIGINS: "*"
-      
-      # Next.js specific
-      NODE_ENV: production
-      HOSTNAME: "0.0.0.0"
-      
-      # Add any other environment variables your app needs here
-      # API_KEY: your_api_key_here
-      # OPENAI_API_KEY: your_openai_key_here
-    
+      MONGODB_DB: invoiceai
+
+      # AI
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+      # Azure (optional — leave blank to use local stubs)
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-}
+      AZURE_SERVICE_BUS_CONNECTION_STRING: ${AZURE_SERVICE_BUS_CONNECTION_STRING:-}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
+
+      # SAP Concur (optional)
+      CONCUR_CLIENT_ID: ${CONCUR_CLIENT_ID:-}
+      CONCUR_CLIENT_SECRET: ${CONCUR_CLIENT_SECRET:-}
+
+      # App
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: '["http://localhost:3000","http://frontend:3000"]'
     depends_on:
       mongodb:
         condition: service_healthy
-    
     networks:
       - invoice-ai-network
-    
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
+    volumes:
+      # Hot-reload in dev: mount source code
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Next.js Frontend ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: invoice-ai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Points the browser + server-side fetch at the backend service
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      BACKEND_API_URL: http://backend:8000
+
+      # Claude chatbot (used directly by the Next.js /api/chat route)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+      NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - invoice-ai-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => { if (r.statusCode !== 200) throw new Error(r.statusCode) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
   mongodb_data:

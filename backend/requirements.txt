@@ -1,0 +1,37 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# AI
+anthropic==0.40.0
+
+# Database
+motor==3.6.0
+pymongo==4.9.2
+
+# Azure SDKs
+azure-storage-blob==12.23.1
+azure-servicebus==7.12.3
+azure-identity==1.19.0
+azure-monitor-opentelemetry==1.6.4
+
+# Observability
+opentelemetry-api==1.29.0
+opentelemetry-sdk==1.29.0
+opentelemetry-instrumentation-fastapi==0.50b0
+opentelemetry-instrumentation-httpx==0.50b0
+structlog==24.4.0
+
+# PDF processing
+pdfplumber==0.11.4
+Pillow==11.0.0
+
+# HTTP
+httpx==0.28.1
+python-multipart==0.0.20
+
+# Utilities
+python-dotenv==1.0.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4

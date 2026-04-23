@@ -3,7 +3,7 @@
 .gitignore
 .gitconfig
 
-# Node modules (will be reinstalled in container)
+# Node modules (reinstalled in container)
 node_modules
 npm-debug.log
 yarn-error.log
@@ -12,6 +12,13 @@ yarn-error.log
 .next
 dist
 out
+
+# Python cache (backend)
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
 
 # Dependencies
 .pnp
