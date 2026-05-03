@@ -1,13 +1,94 @@
 // Rich mock data for the Agentic Invoice Processing demo.
 
+/**
+ * AGENT_DEFINITIONS — mirrors the LangGraph topology exactly.
+ *
+ * parallel: true  → this node runs in the same superstep as its sibling(s)
+ * parallelGroup   → group id shared between parallel siblings
+ * lane            → visual column inside a parallel group (0 = left, 1 = right)
+ *
+ * Graph topology:
+ *   START → ingestion → [header_extractor ‖ line_item] → tax_validator
+ *        → vendor_matcher → rule_engine → human_review → concur_publisher → END
+ */
 export const AGENT_DEFINITIONS = [
-  { id: 'ingest', name: 'Ingestion Agent', role: 'OCR + page segmentation', icon: 'FileScan', color: 'bg-sky-500', model: 'Layout-LM v3' },
-  { id: 'header', name: 'Header Extractor', role: 'Vendor, invoice #, dates, currency', icon: 'Tag', color: 'bg-indigo-500', model: 'GPT-4o (mocked)' },
-  { id: 'lineitems', name: 'Line-Item Agent', role: 'Item rows, qty, unit price', icon: 'List', color: 'bg-violet-500', model: 'Claude 3.5 Sonnet (mocked)' },
-  { id: 'tax', name: 'Tax & Totals Validator', role: 'Subtotal, tax, total reconciliation', icon: 'Calculator', color: 'bg-amber-500', model: 'Deterministic + LLM' },
-  { id: 'vendor', name: 'Vendor Matcher', role: 'Match to master vendor list', icon: 'Building2', color: 'bg-emerald-500', model: 'Embedding search' },
-  { id: 'rules', name: 'Rule Engine', role: 'Apply policy rules', icon: 'ShieldCheck', color: 'bg-rose-500', model: 'Rules DSL' },
-  { id: 'concur', name: 'SAP Concur Publisher', role: 'Post to Concur Invoice v4 API', icon: 'Send', color: 'bg-teal-500', model: 'REST' },
+  {
+    id: 'ingestion',
+    name: 'Ingestion Agent',
+    role: 'PDF OCR + page segmentation',
+    icon: 'FileScan',
+    color: 'bg-sky-500',
+    model: 'pdfplumber',
+    parallel: false,
+  },
+  {
+    id: 'header_extractor',
+    name: 'Header Extractor',
+    role: 'Vendor, invoice #, dates, currency',
+    icon: 'Tag',
+    color: 'bg-indigo-500',
+    model: 'claude-haiku-4-5',
+    parallel: true,
+    parallelGroup: 'extract',
+    lane: 0,
+  },
+  {
+    id: 'line_item',
+    name: 'Line-Item Agent',
+    role: 'Item rows, qty, unit price',
+    icon: 'List',
+    color: 'bg-violet-500',
+    model: 'claude-haiku-4-5',
+    parallel: true,
+    parallelGroup: 'extract',
+    lane: 1,
+  },
+  {
+    id: 'tax_validator',
+    name: 'Tax Validator',
+    role: 'Subtotal + tax = total reconciliation',
+    icon: 'Calculator',
+    color: 'bg-amber-500',
+    model: 'Deterministic',
+    parallel: false,
+  },
+  {
+    id: 'vendor_matcher',
+    name: 'Vendor Matcher',
+    role: 'Fuzzy-match against approved vendor list',
+    icon: 'Building2',
+    color: 'bg-emerald-500',
+    model: 'difflib / fuzzy',
+    parallel: false,
+  },
+  {
+    id: 'rule_engine',
+    name: 'Rule Engine',
+    role: 'Apply policy rules (PO, amount, currency)',
+    icon: 'ShieldCheck',
+    color: 'bg-rose-500',
+    model: 'Deterministic',
+    parallel: false,
+  },
+  {
+    id: 'human_review',
+    name: 'Human Review',
+    role: 'LangGraph interrupt — awaits human decision',
+    icon: 'Eye',
+    color: 'bg-orange-500',
+    model: 'Human-in-the-loop',
+    parallel: false,
+    isHumanNode: true,
+  },
+  {
+    id: 'concur_publisher',
+    name: 'SAP Concur Publisher',
+    role: 'Post approved invoice to Concur v4 API',
+    icon: 'Send',
+    color: 'bg-teal-500',
+    model: 'REST / OAuth 2',
+    parallel: false,
+  },
 ]
 
 export const INITIAL_RULES = [

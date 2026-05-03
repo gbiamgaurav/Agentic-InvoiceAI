@@ -26,3 +26,10 @@ def get_db() -> AsyncIOMotorDatabase:
     if not _client:
         raise RuntimeError("Database not initialised — call connect_db() first")
     return _client[get_settings().mongodb_db]
+
+
+def get_motor_client() -> AsyncIOMotorClient:
+    """Returns the raw Motor client, used by the LangGraph MongoDB checkpointer."""
+    if not _client:
+        raise RuntimeError("Database not initialised — call connect_db() first")
+    return _client
