@@ -27,8 +27,9 @@ class Settings(BaseSettings):
     # Azure Application Insights
     applicationinsights_connection_string: str = ""
 
-    # Anthropic
-    anthropic_api_key: str = ""
+    # LLM providers
+    groq_api_key: str = ""
+    google_api_key: str = ""
 
     # SAP Concur
     concur_client_id: str = ""

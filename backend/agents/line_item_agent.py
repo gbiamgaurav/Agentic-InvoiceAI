@@ -1,8 +1,8 @@
 """
-Line Item Agent — extracts individual invoice line items using Claude.
+Line Item Agent — extracts individual invoice line items using Groq (llama-3.3-70b).
 """
 import json
-import anthropic
+from groq import AsyncGroq
 from agents.base import BaseAgent
 from models.invoice import LineItem
 from core.config import get_settings
@@ -31,7 +31,7 @@ class LineItemAgent(BaseAgent):
     name = "line_item"
 
     def __init__(self):
-        self._client = anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
+        self._client = AsyncGroq(api_key=get_settings().groq_api_key)
 
     async def process(self, context: dict) -> dict:
         raw_text: str = context.get("raw_text", "")
@@ -39,14 +39,17 @@ class LineItemAgent(BaseAgent):
             return {"status": "error", "confidence": 0.0, "log": "No text to extract from", "data": {}}
 
         try:
-            response = self._client.messages.create(
-                model="claude-haiku-4-5-20251001",
+            response = await self._client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 max_tokens=1024,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": f"Invoice text:\n\n{raw_text[:6000]}"}],
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Invoice text:\n\n{raw_text[:6000]}"},
+                ],
             )
 
-            result = json.loads(response.content[0].text)
+            result = json.loads(response.choices[0].message.content)
             confidence = float(result.get("confidence", 0.8))
             raw_items = result.get("line_items", [])
 

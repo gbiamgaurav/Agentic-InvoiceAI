@@ -1,9 +1,9 @@
 """
-Header Extractor Agent — uses Claude to extract vendor, invoice number,
+Header Extractor Agent — uses Groq (llama-3.3-70b) to extract vendor, invoice number,
 dates, PO number, and currency from the raw invoice text.
 """
 import json
-import anthropic
+from groq import AsyncGroq
 from agents.base import BaseAgent
 from core.config import get_settings
 from core.logger import get_logger
@@ -16,6 +16,8 @@ Return ONLY a valid JSON object with these exact keys:
 {
   "vendor": string or null,
   "vendor_address": string or null,
+  "bill_to": string or null,
+  "bill_to_address": string or null,
   "invoice_number": string or null,
   "invoice_date": "YYYY-MM-DD" or null,
   "due_date": "YYYY-MM-DD" or null,
@@ -27,6 +29,8 @@ Return ONLY a valid JSON object with these exact keys:
   "total": number or null,
   "confidence": number (0.0-1.0)
 }
+- "vendor" is the company issuing/sending the invoice (the seller).
+- "bill_to" is the company or person receiving the invoice (the buyer/client).
 If a field is not found, use null. Never add extra keys."""
 
 
@@ -34,25 +38,27 @@ class HeaderExtractorAgent(BaseAgent):
     name = "header_extractor"
 
     def __init__(self):
-        self._client = anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
+        self._client = AsyncGroq(api_key=get_settings().groq_api_key)
 
     async def process(self, context: dict) -> dict:
         raw_text: str = context.get("raw_text", "")
         if not raw_text.strip():
             return {"status": "error", "confidence": 0.0, "log": "No text to extract from", "data": {}}
 
-        # Truncate to avoid excessive token usage — header data is near top
         excerpt = raw_text[:4000]
 
         try:
-            response = self._client.messages.create(
-                model="claude-haiku-4-5-20251001",
+            response = await self._client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 max_tokens=512,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": f"Invoice text:\n\n{excerpt}"}],
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Invoice text:\n\n{excerpt}"},
+                ],
             )
 
-            extracted = json.loads(response.content[0].text)
+            extracted = json.loads(response.choices[0].message.content)
             confidence = float(extracted.pop("confidence", 0.8))
 
             log.info(

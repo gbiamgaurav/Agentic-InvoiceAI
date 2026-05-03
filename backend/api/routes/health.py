@@ -27,8 +27,8 @@ async def health_check():
         {"status": "configured"} if settings.azure_storage_connection_string or settings.azure_storage_account_url
         else {"status": "unconfigured"}
     )
-    checks["anthropic"] = (
-        {"status": "configured"} if settings.anthropic_api_key else {"status": "unconfigured"}
+    checks["groq"] = (
+        {"status": "configured"} if settings.groq_api_key else {"status": "unconfigured"}
     )
 
     healthy = checks["database"]["status"] == "ok"
