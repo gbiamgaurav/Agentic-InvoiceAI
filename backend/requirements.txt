@@ -31,6 +31,7 @@ structlog==24.4.0
 # PDF processing
 pdfplumber==0.11.4
 Pillow==11.0.0
+langchain-opendataloader-pdf>=0.1.0
 
 # HTTP
 httpx==0.28.1
